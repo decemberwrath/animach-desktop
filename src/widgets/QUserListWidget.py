@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from PyQt5.QtWidgets import QListWidget
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QColor, QBrush
 
 
 class QUserListWidget(QListWidget):
@@ -9,11 +9,24 @@ class QUserListWidget(QListWidget):
         # но пока пусть остается для удобства
         super().__init__(*args, **kwargs)
         self.setMaximumWidth(200)
-        self.setFont(QFont('Monospace', 12))
+        #self.setFont(QFont('Monospace', 12))
         self.afk_icon = QIcon('icons/afk.png')
         self.empty_icon = QIcon()
         self.users = {}
         self.sorted_users = []
+
+    def __get_user_color_by_rank(self, user):
+        rank = int(user['rank'])
+        # незарегистрированный пользователь
+        if rank <= 0: return 'grey'
+        # зарегистрированный пользователь
+        elif rank == 1: return 'white'
+        # модератор
+        elif rank == 2: return 'green'
+        # владелец канала
+        elif rank == 4: return 'dodgerblue'
+        # главпетух
+        else: return 'red'
 
     def __get_user_index(self, user_name):
         for index, user in enumerate(self.sorted_users):
@@ -40,8 +53,10 @@ class QUserListWidget(QListWidget):
         
         for user in self.sorted_users:
             self.addItem(user['name'])
+            item = self.item(self.count() - 1)
+            item.setForeground(QBrush(QColor(self.__get_user_color_by_rank(user))))
             if user.get('meta', {}).get('afk', False):
-                self.item(self.count() - 1).setIcon(self.afk_icon)
+                item.setIcon(self.afk_icon)
 
     def delete_user(self, user):
         del self.users[user['name']]
@@ -59,8 +74,10 @@ class QUserListWidget(QListWidget):
         self.__sort_users()
         user_index = self.__get_user_index(user['name'])
         self.insertItem(user_index, user['name'])
+        item = self.item(user_index)
+        item.setForeground(QBrush(QColor(self.__get_user_color_by_rank(user))))
         if user.get('meta', {}).get('afk', False):
-            self.item(user_index).setIcon(self.afk_icon)
+            item.setIcon(self.afk_icon)
 
     def set_afk(self, user):
         user_index = self.__get_user_index(user['name'])

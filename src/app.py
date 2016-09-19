@@ -33,6 +33,8 @@ class Application:
         self.userlist = QUserListWidget(self.window)
         self.message_box = QMessageBoxWidget(self.window)
 
+        self.userlist.itemClicked.connect(self.__select_user)
+
         self.top_layout.addWidget(self.userlist)
         self.top_layout.addWidget(self.message_box)
 
@@ -61,8 +63,13 @@ class Application:
         text = self.edit_box.toPlainText()
         if text:
             self.edit_box.clear()
-            print(text)
             socket_io_connection.send_message(text)
+
+    def __select_user(self, user_item):
+        self.edit_box.setText('%s: %s' % (
+            user_item.text(),
+            self.edit_box.toPlainText()
+        ))
 
     def __set_styles(self):
         self.app.setStyleSheet('''
@@ -76,9 +83,16 @@ class Application:
             }
     
             QListWidget::Item {
-                color: white;
                 background-color: #010A01;
                 selection-color: yellow;
+            }
+            
+            QMessageBoxWidget {
+                color: white;
+            }
+            
+            QUserListWidget {
+                font: bold 16px "Monospace";
             }
         ''')
 
