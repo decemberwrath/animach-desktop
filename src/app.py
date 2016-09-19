@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QListWidget, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, \
+    QPushButton, QFrame
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from src.widgets.QUserListWidget import QUserListWidget
-from src.adapter.socket_io_bridge import SocketIOConnection
+from src.widgets.QMessageBoxWidget import QMessageBoxWidget
+from src.widgets.QEditBoxWidget import QEditBoxWidget
+from src.adapter.socket_io_bridge import socket_io_connection
 
 
 class Worker(QObject):
@@ -12,8 +15,7 @@ class Worker(QObject):
  
     @pyqtSlot()
     def process(self):
-        socket_io_conn = SocketIOConnection()
-        socket_io_conn.connect(app)
+        socket_io_connection.connect(app)
         self.finished.emit()
 
 
@@ -22,24 +24,64 @@ class Application:
         self.app = QApplication(sys.argv)
 
         self.window = QWidget()
-        self.window.resize(640, 480)
+        self.window.resize(854, 480)
         self.window.setWindowTitle("Animach")
 
-        self.layout = QHBoxLayout(self.window)
+        self.main_layout = QVBoxLayout(self.window)
 
+        self.top_layout = QHBoxLayout()
         self.userlist = QUserListWidget(self.window)
-        self.userlist.setMaximumWidth(200)
-        self.message_box = QListWidget(self.window)
+        self.message_box = QMessageBoxWidget(self.window)
 
-        self.layout.addWidget(self.userlist)
-        self.layout.addWidget(self.message_box)
+        self.top_layout.addWidget(self.userlist)
+        self.top_layout.addWidget(self.message_box)
 
-        self.window.setLayout(self.layout)
+        self.bottom_layout = QHBoxLayout()
+        self.edit_box = QEditBoxWidget(self.window)
+        self.vertical_line = QFrame(self.window)
+        self.vertical_line.setFixedWidth(10)
+        self.send_btn = QPushButton(self.window)
+        self.send_btn.setText('Send')
+        self.send_btn.clicked.connect(self.__send_message)
 
+        self.send_btn.setFixedWidth(60)
+        self.send_btn.setFixedHeight(60)
+        
+        self.bottom_layout.addWidget(self.edit_box)
+        self.bottom_layout.addWidget(self.vertical_line)
+        self.bottom_layout.addWidget(self.send_btn)
+
+        self.main_layout.addItem(self.top_layout)
+        self.main_layout.addItem(self.bottom_layout)
+
+        self.window.setLayout(self.main_layout)
         self.__set_styles()
 
+    def __send_message(self):
+        text = self.edit_box.toPlainText()
+        if text:
+            self.edit_box.clear()
+            print(text)
+            socket_io_connection.send_message(text)
+
     def __set_styles(self):
-        self.app.setStyleSheet(self.userlist.styles)
+        self.app.setStyleSheet('''
+            QTextEdit {
+                background-color: #010A01;
+                color: white;
+            }
+
+            QListWidget {
+                background-color: #010A01;
+            }
+    
+            QListWidget::Item {
+                color: white;
+                background-color: #010A01;
+                selection-color: yellow;
+            }
+        ''')
+
 
     # ==========================================================================
     # == Manage user methods ===================================================
@@ -59,9 +101,7 @@ class Application:
     # ==========================================================================    
 
     def add_message(self, message):
-        self.message_box.addItem('[%s] %s: %s' % (
-            message['time'], message['username'], message['msg'])
-        )
+        self.message_box.add_message(message)
 
     def run(self):
         self.thread = QThread(self.window)

@@ -53,26 +53,31 @@ class SocketIOConnection:
             port = server_url.split(':')[-1]
             return int(port)
 
-    def __init_channel_callbacks(self, socket_io):
-        socket_io.emit('initChannelCallbacks')
+    def __init_channel_callbacks(self):
+        self.socket_io.emit('initChannelCallbacks')
 
-    def __login(self, socket_io):
-        socket_io.emit('login', {
+    def __login(self):
+        self.socket_io.emit('login', {
             'name': self.name,
             'pw': self.password
         })
 
-    def __join_channel(self, socket_io):
-        socket_io.emit('joinChannel', {
+    def __join_channel(self):
+        self.socket_io.emit('joinChannel', {
             'name': self.channel,
             'pw': self.channelpw
         })
 
+    def send_message(self, message):
+        msg = { 'msg': message, 'meta': {} }
+        self.socket_io.emit('chatMsg', msg)
+
     def connect(self, app):
         event_reactor_cls = getEventReactor(app)
-        with SocketIO(self.host, self.socket_port, event_reactor_cls) as socketIO:
-            self.__init_channel_callbacks(socketIO)
-            self.__join_channel(socketIO)
-            self.__login(socketIO)
-            socketIO.wait()
+        self.socket_io = SocketIO(self.host, self.socket_port, event_reactor_cls)
+        self.__init_channel_callbacks()
+        self.__join_channel()
+        self.__login()
+        self.socket_io .wait()
 
+socket_io_connection = SocketIOConnection()

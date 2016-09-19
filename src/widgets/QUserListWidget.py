@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from PyQt5.QtWidgets import QListWidget
-from PyQt5.QtGui import QIcon
-#from PyQt5.QtCore import *
+from PyQt5.QtGui import QIcon, QFont
 
 
 class QUserListWidget(QListWidget):
@@ -9,6 +8,8 @@ class QUserListWidget(QListWidget):
         # Возможно sorted_users тут не так уж и нужно,
         # но пока пусть остается для удобства
         super().__init__(*args, **kwargs)
+        self.setMaximumWidth(200)
+        self.setFont(QFont('Monospace', 12))
         self.afk_icon = QIcon('icons/afk.png')
         self.empty_icon = QIcon()
         self.users = {}
@@ -26,20 +27,6 @@ class QUserListWidget(QListWidget):
             self.sorted_users,
             key=lambda u: (-u['rank'], u['name'].lower())
         )
-
-    @property
-    def styles(self):
-        return '''
-            QUserListWidget {
-                background-color: black;
-            }
-    
-            QUserListWidget::Item {
-                color: white;
-                background-color: black;
-                selection-color: yellow;
-            }
-        '''
 
     def init_users(self, users):
         self.sorted_users = users
