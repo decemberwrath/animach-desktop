@@ -3,47 +3,37 @@ from socketIO_client import BaseNamespace
 from src.adapter.utils import sync_smiles
 
 
-def filter_message(msg):
-    return msg
-
-
-def getEventReactor(app):
+def getEventReactor(bridge):
     class EventReactor(BaseNamespace):
         def __init__(self, io, path):
             super().__init__(io, path)
-            self.app = app
+            self.bridge = bridge
 
         def on_chatMsg(self, message):
-            msg = filter_message(message['msg'])
-            self.app.add_message(message)
+            self.bridge.chat_msg.emit(message)
 
         def on_pm(self, data):
             ts = data['time']
             username = data['username']
             msg = data['msg']
-
-            msg = filter_message(msg)
-            if msg is None:
-                return
-
-            print('[%s] PRIVATE %s: %s' % (ts, username, msg))
+            if msg:
+                print('[%s] PRIVATE %s: %s' % (ts, username, msg))
 
         def on_addUser(self, new_user):
-            app.add_user(new_user)
+            self.bridge.add_user.emit(new_user)
 
         def on_userLeave(self, user):
-            app.delete_user(user)
+            self.bridge.user_leave.emit(user)
 
         def on_userlist(self, users):
-            app.init_users(users)
+            self.bridge.user_list.emit(users)
 
         def on_setAFK(self, user):
-            if user and user.get('name', None):
-                app.set_afk(user)
+            self.bridge.user_afk.emit(user)
         
         def on_emoteList(self, smiles):
             sync_smiles(smiles)
-            app.init_smiles(smiles)
+            self.bridge.init_smiles.emit(smiles)
 
     return EventReactor
 

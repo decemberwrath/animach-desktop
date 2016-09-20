@@ -11,11 +11,16 @@ from src.adapter.socket_io_bridge import socket_io_connection
 
 class Worker(QObject):
     finished = pyqtSignal()
-    message = pyqtSignal(int)
+    chat_msg = pyqtSignal('PyQt_PyObject')
+    add_user = pyqtSignal('PyQt_PyObject')
+    user_leave = pyqtSignal('PyQt_PyObject')
+    user_list = pyqtSignal('PyQt_PyObject')
+    user_afk = pyqtSignal('PyQt_PyObject')
+    init_smiles = pyqtSignal('PyQt_PyObject')
  
     @pyqtSlot()
     def process(self):
-        socket_io_connection.connect(app)
+        socket_io_connection.connect(self)
         self.finished.emit()
 
 
@@ -48,7 +53,7 @@ class Application:
 
         self.send_btn.setFixedWidth(60)
         self.send_btn.setFixedHeight(60)
-        
+
         self.bottom_layout.addWidget(self.edit_box)
         self.bottom_layout.addWidget(self.vertical_line)
         self.bottom_layout.addWidget(self.send_btn)
@@ -129,6 +134,14 @@ class Application:
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+
+        self.worker.user_list.connect(self.init_users)
+        self.worker.add_user.connect(self.add_user)
+        self.worker.chat_msg.connect(self.add_message)
+        self.worker.user_leave.connect(self.delete_user)
+        self.worker.user_afk.connect(self.set_afk)
+        self.worker.init_smiles.connect(self.init_smiles)
+
         self.thread.start()
 
         self.window.show()
