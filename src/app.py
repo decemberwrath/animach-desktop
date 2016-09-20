@@ -117,6 +117,9 @@ class Application:
     def add_message(self, message):
         self.message_box.add_message(message)
 
+    def init_smiles(self, smiles):
+        self.message_box.init_smiles(smiles)
+
     def run(self):
         self.thread = QThread(self.window)
         self.worker = Worker()

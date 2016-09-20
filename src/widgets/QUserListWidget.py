@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5.QtWidgets import QListWidget
 from PyQt5.QtGui import QIcon, QFont, QColor, QBrush
+import config
+import os
 
 
 class QUserListWidget(QListWidget):
@@ -9,8 +11,10 @@ class QUserListWidget(QListWidget):
         # но пока пусть остается для удобства
         super().__init__(*args, **kwargs)
         self.setMaximumWidth(200)
-        #self.setFont(QFont('Monospace', 12))
-        self.afk_icon = QIcon('icons/afk.png')
+        self.afk_icon = QIcon(os.path.join(
+            config.ICONS_LOCAL_DIR,
+            'afk.png'
+        ))
         self.empty_icon = QIcon()
         self.users = {}
         self.sorted_users = []

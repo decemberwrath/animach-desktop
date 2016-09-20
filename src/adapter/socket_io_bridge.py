@@ -7,6 +7,7 @@ from socketIO_client.parsers import parse_packet_text
 from src.adapter.event_reactor import getEventReactor
 import config
 
+
 def patch_recv_packet(self):
     try:
         packet_text = self._connection.recv()

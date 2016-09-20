@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from socketIO_client import BaseNamespace
+from src.adapter.utils import sync_smiles
 
 
 def filter_message(msg):
@@ -39,6 +40,10 @@ def getEventReactor(app):
         def on_setAFK(self, user):
             if user and user.get('name', None):
                 app.set_afk(user)
+        
+        def on_emoteList(self, smiles):
+            sync_smiles(smiles)
+            app.init_smiles(smiles)
 
     return EventReactor
 
