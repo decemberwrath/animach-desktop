@@ -23,11 +23,17 @@ class Worker(QObject):
         socket_io_connection.connect(self)
         self.finished.emit()
 
+    @pyqtSlot(object)
+    def send_message(self, message):
+        socket_io_connection.send_message(message)
 
-class Application:
+
+class Application(QObject):
+    #send_message_signal = pyqtSignal(object)
+
     def __init__(self):
+        super().__init__()
         self.app = QApplication(sys.argv)
-
         self.window = QWidget()
         self.window.resize(854, 480)
         self.window.setWindowTitle("Animach")
@@ -44,12 +50,13 @@ class Application:
         self.top_layout.addWidget(self.message_box)
 
         self.bottom_layout = QHBoxLayout()
-        self.edit_box = QEditBoxWidget(self.window)
+        self.edit_box = QEditBoxWidget(self, self.window)
         self.vertical_line = QFrame(self.window)
         self.vertical_line.setFixedWidth(10)
         self.send_btn = QPushButton(self.window)
         self.send_btn.setText('Send')
-        self.send_btn.clicked.connect(self.__send_message)
+
+        self.send_btn.clicked.connect(self.send_message)
 
         self.send_btn.setFixedWidth(60)
         self.send_btn.setFixedHeight(60)
@@ -64,17 +71,20 @@ class Application:
         self.window.setLayout(self.main_layout)
         self.__set_styles()
 
-    def __send_message(self):
+    def send_message(self):
         text = self.edit_box.toPlainText()
         if text:
             self.edit_box.clear()
+            # FIXME: по уму это должно работать через сигналы,
+            # но почему-то не взлетело
+            #self.send_message_signal.emit(text)
             socket_io_connection.send_message(text)
 
     def __select_user(self, user_item):
-        self.edit_box.setText('%s: %s' % (
-            user_item.text(),
-            self.edit_box.toPlainText()
-        ))
+        text = self.edit_box.toPlainText()
+        user_name = user_item.text()
+        if user_name not in text:
+            self.edit_box.setText('%s: %s' % (user_name, text))
 
     def __set_styles(self):
         self.app.setStyleSheet('''
@@ -126,10 +136,10 @@ class Application:
         self.message_box.init_smiles(smiles)
 
     def run(self):
-        self.thread = QThread(self.window)
         self.worker = Worker()
+        self.thread = QThread(self.window)
+
         self.worker.moveToThread(self.thread)
- 
         self.thread.started.connect(self.worker.process)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
